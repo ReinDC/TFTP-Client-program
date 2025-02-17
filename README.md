@@ -21,7 +21,6 @@ This README file provides instructions for compiling and running the `tftp_clien
 - **File Download**: Allows users to download files from a TFTP server.
 - **File Upload**: Enables users to upload files to a TFTP server.
 - **Server Address Configuration**: Users can specify the TFTP server address and port.
-- **Progress Display**: Shows the progress of file transfers.
 - **Timeout and Retries**: Configurable timeout and retry attempts for reliable file transfers.
 - **Graphical User Interface (GUI)**: Provides a user-friendly GUI for easier interaction.
 
