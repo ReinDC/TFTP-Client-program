@@ -21,15 +21,25 @@ This README file provides instructions for compiling and running the `tftp_clien
 - **File Download**: Allows users to download files from a TFTP server.
 - **File Upload**: Enables users to upload files to a TFTP server.
 - **Server Address Configuration**: Users can specify the TFTP server address and port.
-- **Timeout and Retries**: Configurable timeout and retry attempts for reliable file transfers.
 - **Graphical User Interface (GUI)**: Provides a user-friendly GUI for easier interaction.
 
 ## Error-Handling Mechanisms
 
 - **Connection Errors**: Handles errors related to network connectivity and server availability.
 - **File Not Found**: Provides user-friendly messages when the requested file is not found on the server.
-- **Permission Denied**: Alerts users when they do not have permission to access the requested file.
 - **Timeouts**: Implements retry logic for operations that time out.
 - **Invalid Inputs**: Validates user inputs and provides appropriate error messages for invalid entries.
 
-For more detailed information, please refer to the comments and documentation within the `tftp_client.py` source code.
+## Test Cases
+IP Address of the server is **127.0.0.1**
+
+| Test Case | Description                          | Expected Result                       | Input           | Pass/Fail |
+|-----------|--------------------------------------|---------------------------------------|-----------------|:---------:|
+|    1      | Download a text file from the server | File is downloaded successfully       | download.txt    |   Pass    |
+|    2      | Download a jpg file from the server  | File is downloaded successfully       | download.jpg    |   Pass    |
+|    3      | Download a bin file from the server  | File is downloaded successfully       | download.bin    |   Pass    |
+|    4      | Upload a text file to the server     | File is uploaded successfully         | upload.txt      |   Pass    |
+|    5      | Upload a jpg file to the server      | File is uploaded successfully         | upload.jpg      |   Pass    |
+|    6      | Upload a bin file to the server      | File is uploaded successfully         | upload.bin      |   Pass    |
+|    7      | Input an invalid IP address          | Error message is displayed            | 127.0.0.0       |   Pass    |
+|    8      | File extensions don't match when downloading/uploading a file | Error message is displayed | download.txt & download.bin |   Pass    |

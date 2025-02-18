@@ -12,6 +12,7 @@ class TftpClient:
             timeout (int): The timeout duration for the client in seconds. Default is 5 seconds.
             max_retries (int): The maximum number of retries for the client. Default is 5 retries.
         """
+        
         self.timeout = timeout
         self.max_retries = max_retries
 
@@ -26,6 +27,7 @@ class TftpClient:
         Returns:
             str: A unique filename that doesn't exist in the current directory. 
         """
+        
         if not os.path.exists(filename):
             return filename
         base, ext = os.path.splitext(filename)
@@ -52,11 +54,16 @@ class TftpClient:
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         sock.settimeout(self.timeout)
         
-        # RRQ with options
         rrq = b'\x00\x01' + remote_filename.encode() + b'\x00octet\x00'
         rrq += f'blksize\x00{blksize}\x00'.encode()
         server_port = 69
-        sock.sendto(rrq, (server_host, server_port))
+        
+        try:
+            sock.sendto(rrq, (server_host, server_port))
+        except (socket.gaierror, OSError) as e:
+            messagebox.showerror("Error", "Can't find server. Please check IP address")
+            sock.close()
+            return
 
         try:
             file = open(local_filename, 'wb')
@@ -75,7 +82,7 @@ class TftpClient:
                 data, transfer_addr = sock.recvfrom(blksize + 4) 
                 opcode = int.from_bytes(data[:2], 'big')
                 
-                if opcode == 3:  # DATA
+                if opcode == 3:
                     block_number = int.from_bytes(data[2:4], 'big')
                     file_data = data[4:]
                     
@@ -91,7 +98,7 @@ class TftpClient:
                     elif block_number < expected_block:
                         ack = b'\x00\x04' + block_number.to_bytes(2, 'big')
                         sock.sendto(ack, transfer_addr)
-                elif opcode == 5:  # ERROR
+                elif opcode == 5:
                     error_msg = data[4:-1].decode()
                     messagebox.showerror("Server Error", f"Server error: {error_msg}")
                     break
@@ -137,10 +144,15 @@ class TftpClient:
         sock.settimeout(self.timeout)
         success = False
         server_port = 69
+        
         try:
             with open(local_filename, 'rb') as file:
                 wrq = b'\x00\x02' + remote_filename.encode() + b'\x00octet\x00'
-                sock.sendto(wrq, (server_host, server_port))
+                try:
+                    sock.sendto(wrq, (server_host, server_port))
+                except (socket.gaierror, OSError) as e:
+                    messagebox.showerror("Error", "Can't find server. Please check IP address")
+                    return
 
                 current_block = 0
                 retries = self.max_retries
@@ -150,12 +162,12 @@ class TftpClient:
                     try:
                         data, transfer_addr = sock.recvfrom(4)
                         opcode = int.from_bytes(data[:2], 'big')
-                        if opcode == 4:  # ACK packet
+                        if opcode == 4:
                             block_number = int.from_bytes(data[2:4], 'big')
                             if block_number == 0:
                                 current_block = 1
                                 break
-                        elif opcode == 5:  # ERROR packet
+                        elif opcode == 5:
                             error_msg = data[4:-1].decode()
                             messagebox.showerror("Server Error", f"Server error: {error_msg}")
                             return
@@ -196,12 +208,13 @@ class TftpClient:
                     if len(file_data) < blksize:
                         success = True
                         break
+        except FileNotFoundError:
+            messagebox.showerror("Error", "Local file not found")
         finally:
             sock.close()
 
         if success:
             messagebox.showinfo("Success", "Upload completed")
-
 
     def parse_oack(self, data):
         """
@@ -230,7 +243,6 @@ class TftpClientGUI:
         Args:
             root (tk.Tk): The root window of the Tkinter application.
         """
-        
         self.root = root
         self.root.title("TFTP Client")
         
@@ -249,7 +261,7 @@ class TftpClientGUI:
         
         tk.Label(root, text="Block Size:").grid(row=3, column=0, padx=10, pady=10)
         self.blksize = tk.Entry(root, width=30)
-        self.blksize.insert(0, "512")  # Default block size
+        self.blksize.insert(0, "512")
         self.blksize.grid(row=3, column=1, padx=10, pady=10)
         
         tk.Button(root, text="Download", command=self.download_file).grid(row=4, column=0, padx=10, pady=10)
@@ -276,6 +288,18 @@ class TftpClientGUI:
             messagebox.showerror("Error", "All fields are required!")
             return
         
+        remote_ext = os.path.splitext(remote_file)[1].lower()
+        local_ext = os.path.splitext(local_file)[1].lower()
+        if remote_ext != local_ext:
+            messagebox.showerror("Error", "File extension doesn't match. Please change.")
+            return
+        
+        try:
+            blksize = int(blksize)
+        except ValueError:
+            messagebox.showerror("Error", "Block size must be a number")
+            return
+        
         self.client.download(server_ip, remote_file, local_file, blksize)
 
     def upload_file(self):
@@ -295,6 +319,18 @@ class TftpClientGUI:
         
         if not server_ip or not remote_file or not local_file:
             messagebox.showerror("Error", "All fields are required!")
+            return
+        
+        remote_ext = os.path.splitext(remote_file)[1].lower()
+        local_ext = os.path.splitext(local_file)[1].lower()
+        if remote_ext != local_ext:
+            messagebox.showerror("Error", "File extension doesn't match. Please change.")
+            return
+        
+        try:
+            blksize = int(blksize)
+        except ValueError:
+            messagebox.showerror("Error", "Block size must be a number")
             return
         
         self.client.upload(server_ip, remote_file, local_file, blksize)
